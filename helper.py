@@ -5,10 +5,12 @@ class WordVoab():
         self.unknown = '<unk>'
         self.eos = '<eos>'
         self.go = '<go>'
+        self.pad = '<pad>'
         self.word_freq = dict()
         self.add_word(self.unknown)
         self.add_word(self.eos)
         self.add_word(self.go)
+        self.add_word(self.pad)
         self.size = 10000
 
     def add_word(self, word):
