@@ -12,19 +12,16 @@ class WordVoab():
     def __init__(self):
         self.word2ind = dict()
         self.ind2word = dict()
-        self.conversations = []
+        self.word_freq = dict()
+
         self.unknown = '<unk>'
         self.eos = '<eos>'
         self.go = '<go>'
         self.pad = '<pad>'
         self.special_tokens = [self.unknown, self.go, self.eos, self.pad]
-        self.word_freq = dict()
-        self.add_word(self.unknown)
-        self.add_word(self.eos)
-        self.add_word(self.go)
-        self.add_word(self.pad)
-        self.size = 10000
-        self.corpus = []
+
+        for token in self.special_tokens:
+            self.add_word(token)
 
     def add_word(self, word):
         if word not in self.word2ind:
