@@ -3,26 +3,28 @@ import codecs
 import os
 import numpy as np
 import random
+from nltk.tokenize import TweetTokenizer
+import operator
+from collections import Counter
 
 
 class WordVoab():
     def __init__(self):
         self.word2ind = dict()
         self.ind2word = dict()
-        self.lines = dict()
         self.conversations = []
         self.unknown = '<unk>'
         self.eos = '<eos>'
         self.go = '<go>'
         self.pad = '<pad>'
+        self.special_tokens = [self.unknown, self.go, self.eos, self.pad]
         self.word_freq = dict()
         self.add_word(self.unknown)
         self.add_word(self.eos)
         self.add_word(self.go)
         self.add_word(self.pad)
         self.size = 10000
-        self.corpus=[]
-        
+        self.corpus = []
 
     def add_word(self, word):
         if word not in self.word2ind:
@@ -40,40 +42,81 @@ class WordVoab():
 
     def decode(self, ind):
         return self.ind2word[ind]
-    
+
+    def add_words(self, words):
+        for word in words:
+            self.add_word(word)
+
+    def trim_dictionary(self, size):
+        freq_dict = Counter(self.word_freq)
+        # for 100 size chose most common 96(100-4 speical tokens) vocabulary.
+        chosen_vocab = freq_dict.most_common(n=size - len(self.special_tokens))
+        # rest old index mappings and word mappings
+        self.word2ind = dict()
+        self.ind2word = dict()
+        self.word_freq = dict()
+        # Now add the special tokens to the dictionary
+        for word in self.special_tokens:
+            self.add_word(word)
+        # Now add most frequent words from chosen vocabulary list
+        for word in chosen_vocab:
+            self.add_word(word[0])
+            self.word_freq[word[0]] = word[1]
+
+
+class DatasetBuilder():
+    def __init__(self, v):
+        self.vocabulary = v
+
     def load_lines(self):
-        file_name=os.getcwd()+"/data/movie_lines.txt"
-        with codecs.open(file_name, "r",encoding='utf-8', errors='ignore') as fdata:
+        self.lines = dict()
+        file_name = os.getcwd() + "/data/movie_lines.txt"
+        tknzr = TweetTokenizer(preserve_case=False)
+        with codecs.open(file_name, "r", encoding='utf-8', errors='ignore') as fdata:
+            lines = fdata.readlines()
+            # read line by line
+            for line in lines:
+                values = line.split(" +++$+++ ")
+                line_id = str(values[0])
+                text = values[-1]
+                # tokenize text and add to vocabulary
+                tokens = tknzr.tokenize(text)
+                self.vocabulary.add_words(tokens)
+                self.lines[line_id] = tokens
+                #print(line_id, tokens)
+            fdata.close()
+
+    def load_conversation(self):
+        self.conversations = []
+        file_name = os.getcwd() + "/data/movie_conversations.txt"
+        with codecs.open(file_name, "r", encoding='utf-8', errors='ignore') as fdata:
             lines = fdata.readlines()
             for line in lines:
-                values=line.split(" +++$+++ ")
-                line_id= str(values[0])
-                text= values[-1]
-                self.lines[line_id] = text
-        fdata.close()
-    
-    def load_conversation(self):
-        file_name=os.getcwd()+"/data/movie_conversations.txt"
-        with codecs.open(file_name, "r",encoding='utf-8', errors='ignore') as fdata:
-            lines=fdata.readlines()
-            for line in lines:
-                values=line.split(" +++$+++ ")
-                line_ids=values[-1][1:-2].strip().split(",")
+                values = line.strip().split(" +++$+++ ")
+                line_ids = list(map(str.strip, values[-1][1:-1].split(",")))
                 self.conversations.append(line_ids)
-        fdata.close()
-        
-    def prepare_corpus(self):
-        step=2
+            fdata.close()
+
+    def prepare_corpus(self, size=None):
+        '''
+            Pass -1, if you don't want to trim vocab.
+            Reads lines and convesations and builds the needed [(Q,A)] list.
+        '''
+        step = 2
         self.load_lines()
+        if size != None:
+            self.vocabulary.trim_dictionary(size)
         self.load_conversation()
+        self.corpus = []
         for conv in self.conversations:
-            if len(conv) >=step:
-                for i in range(0,len(conv)-step+1):
-                    q=conv[i].strip()[1:-1]
-                    a=conv[i+1].strip()[1:-1]
-                    self.corpus.append([self.lines[q],self.lines[a]])
-       
-            
+            if len(conv) >= step:
+                for i in range(0, len(conv) - step + 1):
+                    q = conv[i].strip()[1:-1]
+                    a = conv[i + 1].strip()[1:-1]
+                    # split, strip and store as [(Q,A)] pairs.
+                    q_line = list(map(self.vocabulary.encode, self.lines[q]))
+                    a_line = list(map(self.vocabulary.encode, self.lines[a]))
+                    self.corpus.append([q_line, a_line])
 
 
 class BatchBuilder():
@@ -117,6 +160,7 @@ class BatchBuilder():
             start_index += batch_size
         return batches
 
+
 '''
 if __name__ == '__main__':
     training_samples = []
@@ -130,5 +174,14 @@ if __name__ == '__main__':
         for b_ in b:
             print(b_)
         print('***')
-'''
 
+    v = WordVoab()
+    data_builder = DatasetBuilder(v)
+    data_builder.prepare_corpus(size=10000)
+    print(len(v.word2ind), len(v.ind2word), len(v.word_freq))
+
+    batch_builder = BatchBuilder(v)
+    training_samples = batch_builder.generate_batches(data_builder.corpus)
+
+    print(len(training_samples))
+'''
