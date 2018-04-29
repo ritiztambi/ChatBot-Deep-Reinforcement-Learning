@@ -6,6 +6,7 @@ import random
 from nltk.tokenize import TweetTokenizer
 import operator
 from collections import Counter
+import pickle
 
 
 class WordVoab():
@@ -158,27 +159,30 @@ class BatchBuilder():
         return batches
 
 
+def save_list_to_pickle(listData, fileName):
+    with open(fileName, 'wb') as f:
+        pickle.dump(listData, f)
+
+
+def read_list_from_pickle(fileName):
+    with open(fileName, 'rb') as f:
+        mynewlist = pickle.load(f)
+    return mynewlist
+
 '''
 if __name__ == '__main__':
-    training_samples = []
-    for _ in range(10):
-        Q = list(np.random.randint(0, 5, size=np.random.randint(3, 6)))
-        A = list(np.random.randint(0, 5, size=np.random.randint(3, 6)))
-        training_samples.append([Q, A])
-    batcher = BatchBuilder(WordVoab())
-    bs = batcher.generate_batches(training_samples)
-    for b in bs:
-        for b_ in b:
-            print(b_)
-        print('***')
-
     v = WordVoab()
     data_builder = DatasetBuilder(v)
     data_builder.prepare_corpus(size=10000)
     print(len(v.word2ind), len(v.ind2word), len(v.word_freq))
 
     batch_builder = BatchBuilder(v)
-    training_samples = batch_builder.generate_batches(data_builder.corpus)
+    training_samples = batch_builder.generate_batches(
+        data_builder.corpus, batch_size=64)
 
     print(len(training_samples))
+
+    #save_list_to_pickle(data_builder.corpus, '.\\data\\ai_data.pkl')
+    #save_list_to_pickle(v, '.\\data\\vocab.pkl')
+    save_list_to_pickle(training_samples, '.\\data\\ai_training_data.pkl')
 '''
