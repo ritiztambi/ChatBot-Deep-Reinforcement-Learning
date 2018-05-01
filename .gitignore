@@ -1,2 +1,2 @@
-*.pkl
+ai_*.pkl
 __pycache__/*
