@@ -183,6 +183,6 @@ if __name__ == '__main__':
     print(len(training_samples))
 
     #save_list_to_pickle(data_builder.corpus, '.\\data\\ai_data.pkl')
-    #save_list_to_pickle(v, '.\\data\\vocab.pkl')
-    save_list_to_pickle(training_samples, '.\\data\\ai_training_data.pkl')
+    save_list_to_pickle(v, '.\\data\\vocab.pkl')
+    #save_list_to_pickle(training_samples, '.\\data\\ai_training_data.pkl')
 '''
