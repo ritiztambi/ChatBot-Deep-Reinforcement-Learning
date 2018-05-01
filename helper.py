@@ -141,6 +141,13 @@ class BatchBuilder():
         for b in range(len(batch)):
             needed_encoder_paddings = max(0, maximumEncLen - len(batch[b][0]))
             needed_decoder_paddings = max(0, maximumDecLen - len(batch[b][1]))
+
+            if len(batch[b][0]) > 20:
+                batch[b][0] = batch[b][0][:20]
+
+            if len(batch[b][1]) > 20:
+                batch[b][1] = batch[b][1][:20]
+
             encoder_ips = [v.encode(v.pad)] * \
                 needed_encoder_paddings + batch[b][0]
             decoder_ips = [v.encode(v.go)] + batch[b][1] + \
@@ -187,4 +194,4 @@ if __name__ == '__main__':
 
     #save_list_to_pickle(data_builder.corpus, '.\\data\\ai_data.pkl')
     #save_list_to_pickle(v, '.\\data\\vocab.pkl')
-    save_list_to_pickle(training_samples, '.\\data\\ai_training_data.pkl')
+    #save_list_to_pickle(training_samples, '.\\data\\ai_training_data.pkl')
