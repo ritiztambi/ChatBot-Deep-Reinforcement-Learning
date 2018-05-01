@@ -11,11 +11,11 @@ class NeuralConversationModel():
 
     def add_place_holder(self):
         self.encoder_input_sequence = tf.placeholder(
-            dtype=tf.int32, shape=(None, None), name='encoder_event')
+            dtype=tf.int32, shape=(None, None), name='encoder_input_sequence')
         self.decoder_input_sequence = tf.placeholder(
-            dtype=tf.int32, shape=(None, None), name='decoder_input_event')
+            dtype=tf.int32, shape=(None, None), name='decoder_input_sequence')
         self.decoder_output_sequence = tf.placeholder(
-            dtype=tf.int32, shape=(None, None), name='decoder_output_event')
+            dtype=tf.int32, shape=(None, None), name='decoder_output_sequence')
         self.encoder_input_length = tf.placeholder(
             dtype=tf.int32, shape=[None], name='encoder_sequence_length')
         self.decoder_input_length = tf.placeholder(
@@ -28,9 +28,9 @@ class NeuralConversationModel():
                 name="embedding_matrix", shape=(self.conf.vocab_size, self.conf.embed_size),
                 initializer=tf.truncated_normal_initializer(mean=0, stddev=0.01))
             self.encoder_embeddings = tf.nn.embedding_lookup(
-                params=self.embedding_matrix, ids=self.decoder_input_sequence, name='encoder_embeddings')
+                params=self.embedding_matrix, ids=self.encoder_input_sequence, name='encoder_embeddings')
             self.decoder_embeddings = tf.nn.embedding_lookup(
-                params=self.embedding_matrix, ids=self.decoder_output_sequence, name='decoder_embeddings')
+                params=self.embedding_matrix, ids=self.decoder_input_sequence, name='decoder_embeddings')
 
     def compute_cost(self):
         crossent = tf.nn.sparse_softmax_cross_entropy_with_logits(
@@ -107,6 +107,7 @@ class NeuralConversationModel():
             len(encoder_input), len(encoder_input[0]))
         decoder_input_length = np.full(
             len(decoder_input), len(decoder_input[0]))
+        #print(len(encoder_input), len(encoder_input[0]))
         fd = {self.encoder_input_sequence: encoder_input,
               self.decoder_input_sequence: decoder_input,
               self.decoder_output_sequence: decoder_output,
